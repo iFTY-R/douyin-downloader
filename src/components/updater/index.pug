@@ -1,4 +1,4 @@
-el-dialog(v-model='store.state.updater.active' :title='t("updater.tip")' custom-class='updater-dialog' :modal='false' :close-on-click-modal='false')
+el-dialog(v-model='store.state.updater.active' :title='t("updater.tip")' class='updater-dialog' :modal='false' :close-on-click-modal='false')
   span {{ t('updater.message', { version: store.state.updater.version }) }}
   template(#footer)
     span.dialog-footer

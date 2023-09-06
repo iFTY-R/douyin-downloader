@@ -89,3 +89,9 @@ pub async fn disk_free_size(path: String) -> u64 {
   }
   return 0;
 }
+
+#[tauri::command]
+pub fn create_dir_recursive(path: &str) -> Result<(), String> {
+  let path = Path::new(path);
+  fs::create_dir_all(path).or(Err(format!("Error while creating directory '{:?}'", path)))
+}

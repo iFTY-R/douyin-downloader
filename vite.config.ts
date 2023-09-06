@@ -1,11 +1,17 @@
-import vueI18n from '@intlify/vite-plugin-vue-i18n'
+import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  plugins: [vue(), ElementPlus(), vueI18n({ include: resolve(__dirname, 'src/i18n/locales/**') })],
+  plugins: [
+    vue(), ElementPlus(),
+    VueI18nPlugin({
+      include: resolve(__dirname, 'src/i18n/locales/**'),
+      runtimeOnly: false,
+    })
+  ],
   server: {
     port: 8000,
   },

@@ -1,10 +1,10 @@
 <template lang="pug" src="./index.pug"></template>
 <style scoped lang="stylus" src="./index.styl"></style>
 <script setup lang="ts">
-import { getUser, getVideos } from '@/api'
+import { getVideos } from '@/api'
 import type { VideoItem } from '@/api'
 import { FileNameType, FolderNameType } from '@/enums'
-import { exists, formatSize, generateVideoURL } from '@/utils'
+import { exists, formatSize, generateVideoURL, sanitizeFolderName } from '@/utils'
 import { dialog, fs, invoke } from '@tauri-apps/api'
 import { basename, resolve } from '@tauri-apps/api/path'
 import { ElButton, ElForm, ElFormItem, ElInput, ElProgress, ElDivider, ElMessage, ElRadioGroup, ElRadio, ElRadioButton } from 'element-plus'
@@ -13,14 +13,18 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+defineOptions({
+  name: 'multiple',
+})
+
 const form = ref({
-  homeURL: '',
+  homeURL: 'https://m.douyin.com/share/user/MS4wLjABAAAAkA4CpbT-TNLAK_0-I-I6BSrAGhtG6MeoG7SloOjwABo',
   ratio: '1080p',
   watermark: 0,
   audio: false,
   folderNameType: FolderNameType.Nickname,
   fileNameType: FileNameType.TitleTag,
-  savePath: '',
+  savePath: 'F:/douyin-download',
 })
 
 const isDownloading = ref(false)
@@ -65,7 +69,7 @@ const onSubmit = async () => {
 
   console.log(videos)
 
-  videos.forEach(async ({ desc, video }, i) => {
+  videos.filter(async ({ desc, video }, i) => {
     const { vid, play_addr } = video
     const isAudio = !vid
 
@@ -105,7 +109,13 @@ const onCancelClick = () => {
 }
 
 const createFolder = async (sec_uid: string, folderNameType: FolderNameType, savePath: string) => {
-  const user = await getUser(sec_uid)
+  const user = await invoke('get_user_info', { secUid: sec_uid }).then(res=>{
+    // console.log(res);
+    return JSON.parse(res as string).user_info;
+  })
+  // const user = await getUser(sec_uid)
+
+  console.log(user);
   if (!user) return
 
   const { uid, short_id, unique_id, nickname } = user
@@ -123,9 +133,17 @@ const createFolder = async (sec_uid: string, folderNameType: FolderNameType, sav
       break
   }
 
+  folderName = sanitizeFolderName(folderName);
+
   const folderPath = await resolve(savePath, folderName)
   const isExist = await exists(folderPath)
-  !isExist && (await fs.createDir(folderPath, { recursive: true }))
+
+  !isExist && (await invoke('create_dir_recursive', { path: folderPath }).catch(e=>{
+    console.log(e)
+  }))
+  // !isExist && (await fs.createDir(folderPath, { recursive: true }).catch(e=>{
+  //   console.log(e)
+  // }))
 
   return folderPath
 }
@@ -136,10 +154,10 @@ const getAllVideo = async (sec_uid: string, audio: boolean) => {
   let data = await getVideos(sec_uid)
   data?.aweme_list.forEach((v) => !(!audio && !v.video.vid) && videos.push(v))
 
-  while (data && data.has_more) {
-    data = await getVideos(sec_uid, data.max_cursor.toString())
-    data?.aweme_list.forEach((v) => !(!audio && !v.video.vid) && videos.push(v))
-  }
+  // while (data && data.has_more) {
+  //   data = await getVideos(sec_uid, data.max_cursor.toString())
+  //   data?.aweme_list.forEach((v) => !(!audio && !v.video.vid) && videos.push(v))
+  // }
 
   return videos
 }

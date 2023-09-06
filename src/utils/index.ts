@@ -27,3 +27,8 @@ export const formatSize = (size: number): string => {
   const strSize = index > 1 ? newSize.toFixed(2) : Math.floor(newSize)
   return `${strSize} ${units[index]}`
 }
+
+export function sanitizeFolderName(name: string): string {
+  // 使用正则表达式匹配不符合文件名称的字符，并用空字符串替换它们
+  return name.replace(/[^\u4E00-\u9FA5a-zA-Z0-9_\-. ]/g, '');
+}
